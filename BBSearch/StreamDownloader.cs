@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.IO;
+using System.Net;
 namespace BBSSearch
 {
     class StreamDownloader
@@ -26,6 +27,24 @@ namespace BBSSearch
             sr.Close();
             sw.Close();
             sw.Dispose();
+        }
+
+        public static bool DownloadFile(string url, string filePath)
+        {
+            try
+            {
+                string URL = url;
+                HttpWebRequest myRequest = (HttpWebRequest)WebRequest.Create(URL);
+                myRequest.KeepAlive = true;
+                HttpWebResponse myResponse = (HttpWebResponse)myRequest.GetResponse();
+                StreamDownloader.DownloadFile(filePath, myResponse.GetResponseStream());
+                myResponse.Close();
+            }
+            catch (Exception e)
+            {
+                return false;
+            }
+            return true;
         }
     }
 }

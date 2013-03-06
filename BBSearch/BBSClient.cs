@@ -16,18 +16,32 @@ namespace BBSSearch
         string password;
         CookieContainer cookieKey;
         BoardInfo bbsBoards;
-        public BBSClient(string usr, string pwd, BoardInfo boards)
+        public bool IsLogIn;
+        public BBSClient(BoardInfo boards)
         {
-            usrName = usr;
-            password = pwd;
+            usrName = "";
+            password = "";
             cookieKey = new CookieContainer();
             bbsBoards = boards;
+            IsLogIn = false;
         }
         public bool TryLogIn()
         {
             //cookieKey.Add(new Cookie("id", "sunzhao","","bbs.fudan.edu.cn"));
+            if (IsLogIn == true)
+            {
+                return true;
+            }
             try
             {
+                LogIn logInForm = new LogIn();
+                logInForm.ShowDialog();
+                usrName = logInForm.userName;
+                password = logInForm.password;
+                if (usrName == "")
+                {
+                    return false;
+                }
                 CookieContainer logCookie = new CookieContainer();
                 ASCIIEncoding encoding = new ASCIIEncoding();
                 string postData = "id=" + usrName;
@@ -54,7 +68,13 @@ namespace BBSSearch
                     cookieKey.Add(new Cookie(item.Name, item.Value, "", "bbs.fudan.edu.cn"));
                 }
                 StreamDownloader.DownloadFile(Global.WorkDir + "login.html", myResponse.GetResponseStream());
-
+                StreamReader sr = new StreamReader(Global.WorkDir + "login.html", Encoding.Default);
+                string content = sr.ReadToEnd();
+                if (content.Contains("快速返回") == true)
+                {
+                    return false;
+                }
+                IsLogIn = true;
                 return true;
             }
             catch(Exception e)
@@ -80,9 +100,9 @@ namespace BBSSearch
                 return false;
             }  
         }
-        public void GetPostByBoard(string UserName, string timeLimit, Form1 mainForm)
+        public void GetPostByBoard(string UserName, string timeLimit, string k1, string k2, Form1 mainForm)
         {
-            int threadNum = 20;
+            int threadNum = 2;
             Thread[] CreateThread = new Thread[threadNum];
             UserPostSearcher[] tp = new UserPostSearcher[threadNum];
             BoardEntry[] boards = bbsBoards.AllBoard.ToArray();
@@ -95,7 +115,7 @@ namespace BBSSearch
             int offset = 0;
             for (int i = 0; i < threadNum - 1; ++i)
             {
-                tp[i] = new UserPostSearcher(cookieKey, boards, offset, taskNumPerThread, UserName, timeLimit, mainForm);
+                tp[i] = new UserPostSearcher(cookieKey, boards, offset, taskNumPerThread, UserName, timeLimit, k1, k2, mainForm);
                 CreateThread[i] =
                  new Thread(new ThreadStart(tp[i].GetPostByBoard));
                 CreateThread[i].Start();
@@ -103,7 +123,7 @@ namespace BBSSearch
             }
             int index = threadNum - 1;
             int leftLength = boards.Length - (threadNum - 1) * taskNumPerThread;
-            UserPostSearcher tp1 = new UserPostSearcher(cookieKey, boards, offset, leftLength, usrName, timeLimit, mainForm);
+            UserPostSearcher tp1 = new UserPostSearcher(cookieKey, boards, offset, leftLength, usrName, timeLimit, k1, k2, mainForm);
             CreateThread[index] =
              new Thread(new ThreadStart(tp1.GetPostByBoard));
             CreateThread[index].Start();      

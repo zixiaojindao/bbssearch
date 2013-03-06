@@ -9,6 +9,7 @@ using System.Windows.Forms;
 using System.Threading;
 using Microsoft.Win32;
 using System.Diagnostics;
+using System.IO;
 
 namespace BBSSearch
 {
@@ -20,15 +21,48 @@ namespace BBSSearch
         public Form1()
         {
             InitializeComponent();
-            bbsBoards = new BoardInfo();
-            progressBar1.Maximum = bbsBoards.AllBoard.Count;
-            UserClient = new BBSClient("RoundRobin", "891021", bbsBoards);
+            if (!Directory.Exists(Global.WorkDir))
+            {
+                Directory.CreateDirectory(Global.WorkDir);
+            }
+            UserClient = null;
             cur_Res = new List<PostEntry>();
             progressBar1.Visible = false;
+            Thread lt = new Thread(new ThreadStart(LoadBoardInfo));
+            lt.Start();
+            //LoadBoardInfo();
         }
         public void ShowProgress(int step)
         {
             progressBar1.Increment(step);
+        }
+        private void LoadBoardInfo()
+        {
+            try
+            {
+                button1.Enabled = false;
+                button2.Enabled = false;
+                button3.Enabled = false;
+                label3.Text = "getting bbs board infomation...";
+                bbsBoards = new BoardInfo();
+                if (bbsBoards.AllBoard != null)
+                {
+                    button1.Enabled = true;
+                    button2.Enabled = true;
+                    button3.Enabled = true;
+                    progressBar1.Maximum = bbsBoards.AllBoard.Count;
+                    UserClient = new BBSClient(bbsBoards);
+                    label3.Visible = false;
+                    pictureBox1.Load(bbsBoards.WelcomePicURL);
+                }
+                else
+                {
+                    label3.Text = "errors ocurrs, pls restart this program";
+                }
+            }
+            catch (Exception e)
+            {
+            }
         }
         private void ShowResOnListBox(List<PostEntry> res)
         {
@@ -41,8 +75,17 @@ namespace BBSSearch
 
         private void button1_Click(object sender, EventArgs e)
         {
+            if (UserClient.IsLogIn == false)
+            {
+                MessageBox.Show("pls try log in first");
+                return;
+            }
             progressBar1.Visible = true;
-            UserClient.GetPostByBoard(textBox_UserName.Text.Trim(), textBox_Time_Limit.Text.Trim(), this);
+            UserClient.GetPostByBoard(textBox_UserName.Text.Trim(), 
+                textBox_Time_Limit.Text.Trim(), 
+                textBoxKeyWord1.Text.Trim(),
+                textBoxKeyWord2.Text.Trim(),
+                this);
             Thread showResThread = new Thread(new ThreadStart(ShowResult));
             showResThread.Start();
         }
