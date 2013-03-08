@@ -195,7 +195,7 @@ namespace BBSSearch
         }
         private List<string> ParseAllBoardID(List<string> allBoardName)
         {
-            List<string> allBoardID = new List<string>();
+            string[] allBoardID = new string[allBoardName.Count];
             string bid = "-1";
             try
             {
@@ -205,7 +205,7 @@ namespace BBSSearch
                     bid = ParseBoardIDByName(allBoardName[i]);
                     if (bid != "-1")
                     {
-                        allBoardID.Add(bid);
+                        allBoardID[i] = bid;
                     }
                 });
             }
@@ -213,7 +213,7 @@ namespace BBSSearch
             {
                 return null;
             }
-            return allBoardID;
+            return allBoardID.ToList();
         }
 
         private bool LoadAllBoardOnLine()
